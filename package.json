@@ -1,0 +1,13 @@
+{
+  "name": "valley-of-eternity-character-creator",
+  "version": "1.0.0",
+  "description": "Browser-based Character Creator for Valley of Eternity TRPG",
+  "main": "index.html",
+  "scripts": {
+    "start": "npx serve . -p 3000",
+    "deploy:gh-pages": "npx gh-pages -d . --dotfiles"
+  },
+  "keywords": ["trpg", "character-sheet", "valley-of-eternity", "cocofolia"],
+  "author": "",
+  "license": "MIT"
+}

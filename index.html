@@ -1,0 +1,351 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Valley of Eternity - Character Creator</title>
+  <link rel="stylesheet" href="styles.css">
+  <!-- External Icon Library: Lucide -->
+  <script src="https://unpkg.com/lucide@latest"></script>
+  <!-- HTML2Canvas for simple UI image export -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+</head>
+<body>
+  <div class="app-container">
+    <!-- Header -->
+    <header class="app-header">
+      <div class="brand">
+        <svg class="brand-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M12 2L2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5"/>
+        </svg>
+        <div>
+          <h1 class="brand-title">Valley of Eternity</h1>
+          <span class="brand-subtitle">Glacial Character Creator</span>
+        </div>
+      </div>
+      <div class="header-actions">
+        <!-- Hidden file inputs -->
+        <input type="file" id="jsonFileInput" accept=".json,application/json" style="display: none;" />
+        <input type="file" id="charImageFileInput" accept="image/*" style="display: none;" />
+
+        <button id="btnExportImage" class="btn" title="UI画像出力 (正方形)">
+          <i data-lucide="image" class="icon"></i>
+          <span>正方形画像出力</span>
+        </button>
+        <button id="btnCopyCcfolia" class="btn btn-primary" title="ココフォリア駒コピー">
+          <i data-lucide="copy" class="icon"></i>
+          <span>ココフォリア駒コピー</span>
+        </button>
+        <button id="btnDownloadCcfolia" class="btn" title="JSON保存">
+          <i data-lucide="download" class="icon"></i>
+          <span>JSON保存</span>
+        </button>
+        <button id="btnLoadJson" class="btn" title="JSON読込">
+          <i data-lucide="folder-open" class="icon"></i>
+          <span>JSON読込</span>
+        </button>
+        <button id="btnReset" class="btn btn-ghost" title="リセット">
+          <i data-lucide="rotate-ccw" class="icon"></i>
+        </button>
+      </div>
+    </header>
+
+    <!-- Main Workspace Grid -->
+    <main class="main-layout">
+      <!-- Left Panel: Input & Controls -->
+      <div class="creator-panel">
+        
+        <!-- Type & Basic Info Section -->
+        <section class="section-box">
+          <div class="section-header">
+            <div class="section-title-wrap">
+              <i data-lucide="user" class="icon"></i>
+              <h2 class="section-title">種別 & プロフィール</h2>
+            </div>
+          </div>
+
+          <!-- Type Switcher -->
+          <div class="type-toggle-group">
+            <button type="button" id="btnTypeHero" class="type-btn active">
+              <i data-lucide="shield" class="icon"></i>
+              <span>ヒーローペンギン</span>
+            </button>
+            <button type="button" id="btnTypeAnti" class="type-btn">
+              <i data-lucide="compass" class="icon"></i>
+              <span>アンチペンギン</span>
+            </button>
+          </div>
+
+          <!-- Profile Info with Image Upload -->
+          <div class="profile-input-layout">
+            <!-- Portrait Upload Box -->
+            <div class="portrait-upload-area" id="portraitUploadArea" title="クリックして画像を選択">
+              <img id="portraitPreviewImg" class="portrait-preview-img" style="display: none;" alt="Portrait" />
+              <div id="portraitPlaceholder" class="portrait-placeholder">
+                <i data-lucide="camera" class="icon" style="width: 24px; height: 24px;"></i>
+                <span>画像選択</span>
+              </div>
+            </div>
+
+            <!-- Name & PL Inputs -->
+            <div class="profile-fields-col">
+              <div class="form-group">
+                <label class="form-label" for="charName">名前</label>
+                <input type="text" id="charName" class="form-input" placeholder="例: ペリクレス / サイトレス・サン" spellcheck="false" autocomplete="off" />
+              </div>
+              <div class="form-group">
+                <label class="form-label" for="playerName">PL名</label>
+                <input type="text" id="playerName" class="form-input" placeholder="プレイヤー名" spellcheck="false" autocomplete="off" />
+              </div>
+            </div>
+          </div>
+
+          <!-- Species Selection Cards -->
+          <div class="form-group" style="margin-top: 14px; margin-bottom: 16px;">
+            <label class="form-label">種族</label>
+            <div id="speciesGrid" class="species-grid"></div>
+          </div>
+
+          <!-- Memo -->
+          <div class="form-group">
+            <label class="form-label" for="charMemo">メモ</label>
+            <textarea id="charMemo" class="form-textarea" placeholder="キャラクターの背景、目的、信条など"></textarea>
+          </div>
+        </section>
+
+        <!-- Attributes Section -->
+        <section class="section-box">
+          <div class="section-header">
+            <div class="section-title-wrap">
+              <i data-lucide="activity" class="icon"></i>
+              <h2 class="section-title">能力値</h2>
+            </div>
+            <div class="header-pts-wrap">
+              <span class="badge badge-counter">
+                合計pt:
+                <input type="number" id="attrTotalMaxInput" class="pt-number-input" value="12" min="1" max="99" />
+              </span>
+              <span class="badge badge-counter">
+                残り: <strong id="attrRemainingPoints" style="margin-left: 4px;">0 pt</strong>
+              </span>
+            </div>
+          </div>
+
+          <div class="attributes-grid">
+            <!-- Agility -->
+            <div class="attr-row">
+              <div class="attr-info">
+                <span class="attr-name">敏捷</span>
+                <span class="attr-meta">AGILITY</span>
+              </div>
+              <div class="attr-controls">
+                <button type="button" class="attr-btn" id="btnMinus_agi">−</button>
+                <span class="attr-value" id="val_agi">4</span>
+                <button type="button" class="attr-btn" id="btnPlus_agi">+</button>
+              </div>
+            </div>
+
+            <!-- Strength -->
+            <div class="attr-row">
+              <div class="attr-info">
+                <span class="attr-name">筋力</span>
+                <span class="attr-meta">STRENGTH</span>
+              </div>
+              <div class="attr-controls">
+                <button type="button" class="attr-btn" id="btnMinus_str">−</button>
+                <span class="attr-value" id="val_str">6</span>
+                <button type="button" class="attr-btn" id="btnPlus_str">+</button>
+              </div>
+            </div>
+
+            <!-- Philosophy / Glacier Soul -->
+            <div class="attr-row">
+              <div class="attr-info">
+                <span class="attr-name" id="labelAttrPhi">哲学</span>
+                <span class="attr-meta">PHILOSOPHY / SOUL</span>
+              </div>
+              <div class="attr-controls">
+                <button type="button" class="attr-btn" id="btnMinus_phi">−</button>
+                <span class="attr-value" id="val_phi">4</span>
+                <button type="button" class="attr-btn" id="btnPlus_phi">+</button>
+              </div>
+            </div>
+
+            <!-- Survival -->
+            <div class="attr-row">
+              <div class="attr-info">
+                <span class="attr-name">生存</span>
+                <span class="attr-meta">SURVIVAL</span>
+              </div>
+              <div class="attr-controls">
+                <button type="button" class="attr-btn" id="btnMinus_sur">−</button>
+                <span class="attr-value" id="val_sur">4</span>
+                <button type="button" class="attr-btn" id="btnPlus_sur">+</button>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        <!-- Equipment Section (With dynamic slots & free input) -->
+        <section class="section-box">
+          <div class="section-header">
+            <div class="section-title-wrap">
+              <i data-lucide="sword" class="icon"></i>
+              <h2 class="section-title">装備 & 所持品</h2>
+            </div>
+            <button type="button" id="btnAddEquipSlot" class="btn" style="padding: 4px 10px; font-size: 11px;">
+              <span>+ 装備スロット追加</span>
+            </button>
+          </div>
+
+          <!-- Dynamic Equipment Slots Container -->
+          <div id="equipmentSlotsList" class="equipment-slots-list"></div>
+        </section>
+
+        <!-- Special Abilities Section -->
+        <section class="section-box">
+          <div class="section-header">
+            <div class="section-title-wrap">
+              <i data-lucide="sparkles" class="icon"></i>
+              <h2 class="section-title" id="abilitiesSectionTitle">特殊能力 (哲学能力)</h2>
+            </div>
+            <div class="header-pts-wrap">
+              <span class="badge badge-counter">
+                上限pt:
+                <input type="number" id="specialTotalMaxInput" class="pt-number-input" value="5" min="1" max="99" />
+              </span>
+              <span class="badge badge-counter">
+                残り: <strong id="specialRemainingPoints" style="margin-left: 4px;">5 / 5 pt</strong>
+              </span>
+            </div>
+          </div>
+
+          <div class="abilities-filter-bar">
+            <input type="text" id="abilitySearch" class="form-input abilities-search" placeholder="能力名や効果で検索..." />
+          </div>
+
+          <div id="abilitiesList" class="abilities-list"></div>
+        </section>
+
+      </div>
+
+      <!-- Right Panel: Realtime Sheet & Output Preview -->
+      <div class="preview-panel">
+        
+        <!-- Character Sheet Card (Exportable Target - Square 1:1) -->
+        <div id="characterPreviewCard" class="preview-card-wrap square-card">
+          <div class="sheet-header">
+            <!-- Square Portrait in Sheet -->
+            <div class="sheet-portrait-frame">
+              <img id="sheetPortraitImg" class="sheet-portrait-img" style="display: none;" alt="Portrait" />
+              <div id="sheetPortraitPlaceholder" class="sheet-portrait-placeholder">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" class="icon" style="width: 24px; height: 24px;">
+                  <circle cx="12" cy="8" r="4"/>
+                  <path d="M4 20c0-4 4-6 8-6s8 2 8 6"/>
+                </svg>
+              </div>
+            </div>
+
+            <div class="sheet-title-area">
+              <div id="previewCharName" class="sheet-character-name">名前未定</div>
+              <div id="previewPlayerName" class="sheet-player-name">PL: 未設定</div>
+              <div id="previewTypeBadge" class="sheet-type-badge">ヒーローペンギン / コウテイペンギン</div>
+            </div>
+          </div>
+
+          <!-- Derived Sub-stats Grid (体温値, Fat, 防御力, 意志力) -->
+          <div class="substats-grid">
+            <div class="substat-box">
+              <span class="substat-label">体温値</span>
+              <span id="previewWarmth" class="substat-val">30</span>
+            </div>
+            <div class="substat-box">
+              <span class="substat-label">Fat</span>
+              <span id="previewFat" class="substat-val">40</span>
+            </div>
+            <div class="substat-box">
+              <span class="substat-label">防御力</span>
+              <span id="previewDefense" class="substat-val">2</span>
+            </div>
+            <div class="substat-box">
+              <span class="substat-label">意志力</span>
+              <span id="previewWillpower" class="substat-val">2</span>
+            </div>
+          </div>
+
+          <!-- Attributes Summary Bar -->
+          <div class="sheet-attributes-bar">
+            <div class="sheet-attr-item">
+              <span class="sheet-attr-label">敏捷</span>
+              <span id="previewAttrAgi" class="sheet-attr-num">4</span>
+            </div>
+            <div class="sheet-attr-item">
+              <span class="sheet-attr-label">筋力</span>
+              <span id="previewAttrStr" class="sheet-attr-num">6</span>
+            </div>
+            <div class="sheet-attr-item">
+              <span id="previewAttrPhiLabel" class="sheet-attr-label">哲学</span>
+              <span id="previewAttrPhi" class="sheet-attr-num">4</span>
+            </div>
+            <div class="sheet-attr-item">
+              <span class="sheet-attr-label">生存</span>
+              <span id="previewAttrSur" class="sheet-attr-num">4</span>
+            </div>
+          </div>
+
+          <!-- Two-column content inside square card: Equipment on Left, Abilities on Right -->
+          <div class="sheet-two-col">
+            <!-- Equipment Column -->
+            <div class="sheet-section">
+              <div class="sheet-sec-title">
+                <i data-lucide="shield" class="icon" style="width: 14px; height: 14px;"></i>
+                <span>装備</span>
+              </div>
+              <div id="previewEquipContainer" class="sheet-equipment-column"></div>
+            </div>
+
+            <!-- Abilities Column -->
+            <div class="sheet-section">
+              <div class="sheet-sec-title">
+                <i data-lucide="zap" class="icon" style="width: 14px; height: 14px;"></i>
+                <span id="previewAbilitiesTitle">修得能力</span>
+              </div>
+              <div id="previewAbilitiesContainer" class="sheet-abilities-column"></div>
+            </div>
+          </div>
+
+          <div class="sheet-card-footer">
+            <span>VALLEY OF ETERNITY</span>
+          </div>
+        </div>
+
+        <!-- Ccfolia Commands & Quick Output Box -->
+        <div class="ccfolia-box">
+          <div class="ccfolia-header">
+            <div class="ccfolia-title">
+              <i data-lucide="terminal" class="icon" style="width: 14px; height: 14px;"></i>
+              <span>ココフォリア コマ設定プレビュー</span>
+            </div>
+            <button type="button" id="btnQuickCopy" class="btn" style="padding: 4px 10px; font-size: 11px;">
+              <i data-lucide="copy" class="icon" style="width: 14px; height: 14px;"></i>
+              <span>コピー</span>
+            </button>
+          </div>
+          <pre id="ccfoliaCommandsPreview" class="commands-preview"></pre>
+        </div>
+
+      </div>
+    </main>
+  </div>
+
+  <!-- Toast Feedback -->
+  <div id="toast" class="toast">
+    <i data-lucide="check-circle" class="icon"></i>
+    <span class="toast-text"></span>
+  </div>
+
+  <!-- Scripts -->
+  <script src="data.js"></script>
+  <script src="app.js"></script>
+</body>
+</html>
